@@ -1,6 +1,4 @@
-# https://giorgos.sealabs.net/docker-cache-on-travis-and-docker-112.html
-sudo: required
-
+---
 language: python
 python:
   - '2.7'
@@ -15,26 +13,49 @@ env:
     - ANSIBLE_VERSION='2.2.0'
     - ANSIBLE_VERSION='2.1.0'
 
+# Require the standard build environment
+sudo: required
+
 services:
   - docker
+
+# Cache Ansible and Molecule to speed things up
+cache:
+  - pip
 
 before_install:
   - rvm get stable --auto-dotfiles
   - rvm default
   - ruby -v
+  - sudo apt-get -qq update
+  - sudo apt-get install -o Dpkg::Options::='--force-confold' --force-yes -y docker-engine
 
 install:
+  # Upgrade PIP
   - pip install --upgrade pip
+
+  # Install Ansible
   - if [ "$ANSIBLE_VERSION" = "latest" ]; then
       pip install ansible;
     else
       pip install ansible==$ANSIBLE_VERSION;
     fi
-  - ansible --version
-  - pip install molecule==$MOLECULE_VERSION
+
+  # Install Python API for Docker (required by Molecule Docker driver)
   - pip install docker-py==$DOCKER_PY_VERSION
+
+  # Install Molecule
+  - pip install molecule==$MOLECULE_VERSION
+
+  # Install Ruby Bundler
   - gem install bundler
+
+  # Install Ruby Gems from Gemfile
   - bundle install --path vendor/bundle
+
+  # Build the Docker images
+  - bundle exec molecule create
+  - bundle exec molecule destroy
 
 script:
   - bundle exec molecule test
