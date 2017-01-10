@@ -22,6 +22,8 @@ services:
 # Cache Ansible and Molecule to speed things up
 cache:
   - pip
+  - ruby
+  - rvm
 
 before_install:
   - rvm get stable --auto-dotfiles
@@ -52,10 +54,6 @@ install:
 
   # Install Ruby Gems from Gemfile
   - bundle install --path vendor/bundle
-
-  # Build the Docker images
-  - bundle exec molecule create
-  - bundle exec molecule destroy
 
 script:
   - bundle exec molecule test
